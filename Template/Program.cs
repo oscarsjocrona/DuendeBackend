@@ -2,9 +2,26 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using ids.TestData;
+using Serilog.AspNetCore;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
+
+Log.Logger = new LoggerConfiguration()
+             .MinimumLevel.Debug()
+             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+             .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+             .MinimumLevel.Override("System", LogEventLevel.Warning)
+             .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
+             .Enrich.FromLogContext()
+             .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}", theme: AnsiConsoleTheme.Code)
+             .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+             .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddSerilog();
 builder.Services.AddRazorPages();
+
 
 builder.Services.AddSingleton<ICorsPolicyService>((container) => {
     var logger = container.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
