@@ -1,11 +1,13 @@
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
+using Microsoft.Extensions.DependencyInjection;
 using ids.TestData;
 using Serilog.AspNetCore;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using Microsoft.EntityFrameworkCore;
 
 Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
@@ -19,6 +21,11 @@ Log.Logger = new LoggerConfiguration()
              .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+var configuration = builder.Configuration;
+var connectionString = configuration.GetConnectionString(name: "DefaultConnection");
+var migrationsAssembly = typeof(Config).Assembly.GetName().Name;
+
 builder.Logging.AddSerilog();
 builder.Services.AddRazorPages();
 
@@ -39,13 +46,20 @@ builder.Services.AddIdentityServer(setupAction: options =>
     options.Events.RaiseSuccessEvents = true;
 
     options.EmitStaticAudienceClaim = true;
-}).AddTestUsers(TestUsers.Users)
-.AddInMemoryClients(Config.Clients)
-.AddInMemoryApiResources(Config.ApiResources)
-.AddInMemoryApiScopes(Config.ApiScopes)
-.AddInMemoryIdentityResources(Config.IdentityResources);
+}).AddConfigurationStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
+    .AddOperationalStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
+    .AddTestUsers(TestUsers.Users); 
+
+//.AddInMemoryClients(Config.Clients)
+//.AddInMemoryApiResources(Config.ApiResources)
+//.AddInMemoryApiScopes(Config.ApiScopes)
+//.AddInMemoryIdentityResources(Config.IdentityResources);
 
 builder.Services.AddAuthentication();
+    //.AddCookie("My auth cookie", options =>
+    //{
+    //    options.Cookie.HttpOnly = true;
+    //});
 var app = builder.Build();
 
 app.UseIdentityServer();
