@@ -8,6 +8,9 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Microsoft.EntityFrameworkCore;
+using ids.Data;
+using ids.Database;
+using Microsoft.AspNetCore.Identity;
 
 Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
@@ -28,7 +31,13 @@ var migrationsAssembly = typeof(Config).Assembly.GetName().Name;
 
 builder.Logging.AddSerilog();
 builder.Services.AddRazorPages();
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlite(connectionString, sqliteOptions => sqliteOptions.MigrationsAssembly(migrationsAssembly));
+});
 
+builder.Services.AddIdentity<IdentityUser,  IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddSingleton<ICorsPolicyService>((container) => {
     var logger = container.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
@@ -48,7 +57,7 @@ builder.Services.AddIdentityServer(setupAction: options =>
     options.EmitStaticAudienceClaim = true;
 }).AddConfigurationStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
     .AddOperationalStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
-    .AddTestUsers(TestUsers.Users); 
+    .AddAspNetIdentity<IdentityUser>();
 
 //.AddInMemoryClients(Config.Clients)
 //.AddInMemoryApiResources(Config.ApiResources)
@@ -68,5 +77,12 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 app.MapRazorPages().RequireAuthorization();
+
+if (args.Contains("/seed")){
+    Log.Information("Seeding database...");
+    SeedData.EnsureSeedData(app);
+    Log.Information("Done seeding database...exiting");
+    return;
+}
 
 app.Run();
