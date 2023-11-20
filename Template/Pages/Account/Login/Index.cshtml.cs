@@ -89,11 +89,11 @@ public class Index : PageModel
         if (ModelState.IsValid)
         {
             // validate username/password against in-memory store
-            if (await _signInManager.UserManager.FindByNameAsync(Input.Username) is IdentityUser foundUser && 
-                await _signInManager.CheckPasswordSignInAsync(foundUser, Input.Password, false) == Microsoft.AspNetCore.Identity.SignInResult.Success)
+            if (await _signInManager.UserManager.FindByNameAsync(Input.Username) is IdentityUser user && 
+                await _signInManager.CheckPasswordSignInAsync(user, Input.Password, false) == Microsoft.AspNetCore.Identity.SignInResult.Success)
             {
-                var user = _users.FindByUsername(Input.Username);
-                await _events.RaiseAsync(new UserLoginSuccessEvent(user.Username, user.SubjectId, user.Username, clientId: context?.Client.ClientId));
+                
+                await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserName, user.Id, user.UserName, clientId: context?.Client.ClientId));
 
                 // only set explicit expiration here if user chooses "remember me". 
                 // otherwise we rely upon expiration configured in cookie middleware.
@@ -108,9 +108,9 @@ public class Index : PageModel
                 };
 
                 // issue authentication cookie with subject ID and username
-                var isuser = new IdentityServerUser(user.SubjectId)
+                var isuser = new IdentityServerUser(user.Id)
                 {
-                    DisplayName = user.Username
+                    DisplayName = user.UserName
                 };
 
                 await HttpContext.SignInAsync(isuser, props);
