@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using WeatherForecast.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<ITokenService, TokenService>();
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
 builder.Services.Configure<IdentityServerSettings>(builder.Configuration.GetSection("IdentityServerSettings"));
 
 builder.Services.AddAuthentication(options =>

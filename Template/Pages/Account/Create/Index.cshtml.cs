@@ -6,6 +6,7 @@ using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -15,25 +16,27 @@ namespace IdentityServerHost.Pages.Create;
 [AllowAnonymous]
 public class Index : PageModel
 {
-    private readonly TestUserStore _users;
+    private readonly UserManager<IdentityUser> _userManager;
+
+    //private readonly TestUserStore _users;
     private readonly IIdentityServerInteractionService _interaction;
 
     [BindProperty]
     public InputModel Input { get; set; }
         
     public Index(
-        IIdentityServerInteractionService interaction,
-        TestUserStore users = null)
+        IIdentityServerInteractionService interaction, UserManager<IdentityUser> userManager)
     {
-        // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
-        _users = users ?? throw new Exception("Please call 'AddTestUsers(TestUsers.Users)' on the IIdentityServerBuilder in Startup or remove the TestUserStore from the AccountController.");
+        _userManager = userManager;
+        //// this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
+        //_users = users ?? throw new Exception("Please call 'AddTestUsers(TestUsers.Users)' on the IIdentityServerBuilder in Startup or remove the TestUserStore from the AccountController.");
             
         _interaction = interaction;
     }
 
     public IActionResult OnGet(string returnUrl)
     {
-        Input = new InputModel { ReturnUrl = returnUrl };
+        Input = new InputModel { ReturnUrl = System.Web.HttpUtility.UrlDecode(returnUrl) };
         return Page();
     }
         
@@ -69,49 +72,59 @@ public class Index : PageModel
             }
         }
 
-        if (_users.FindByUsername(Input.Username) != null)
+        if (await _userManager.FindByNameAsync(Input.Username) != null)
         {
             ModelState.AddModelError("Input.Username", "Invalid username");
         }
 
         if (ModelState.IsValid)
         {
-            var user = _users.CreateUser(Input.Username, Input.Password, Input.Name, Input.Email);
-
-            // issue authentication cookie with subject ID and username
-            var isuser = new IdentityServerUser(user.SubjectId)
-            {
-                DisplayName = user.Username
-            };
-
-            await HttpContext.SignInAsync(isuser);
-
-            if (context != null)
-            {
-                if (context.IsNativeClient())
+            var iduser = new IdentityUser() { UserName = Input.Username, NormalizedUserName = Input.Name, Email = Input.Email };
+            var result = await _userManager.CreateAsync(iduser, Input.Password);
+            if (result.Succeeded) {
+                // issue authentication cookie with subject ID and username
+                var isuser = new IdentityServerUser(iduser.Id)
                 {
-                    // The client is native, so this change in how to
-                    // return the response is for better UX for the end user.
-                    return this.LoadingPage(Input.ReturnUrl);
+                    DisplayName = iduser.UserName
+                };
+
+                await HttpContext.SignInAsync(isuser);
+
+                if (context != null)
+                {
+                    if (context.IsNativeClient())
+                    {
+                        // The client is native, so this change in how to
+                        // return the response is for better UX for the end user.
+                        return this.LoadingPage(Input.ReturnUrl);
+                    }
+
+                    // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
+                    return Redirect(Input.ReturnUrl);
                 }
 
-                // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
-                return Redirect(Input.ReturnUrl);
-            }
-
-            // request for a local page
-            if (Url.IsLocalUrl(Input.ReturnUrl))
-            {
-                return Redirect(Input.ReturnUrl);
-            }
-            else if (string.IsNullOrEmpty(Input.ReturnUrl))
-            {
-                return Redirect("~/");
+                // request for a local page
+                if (Url.IsLocalUrl(Input.ReturnUrl))
+                {
+                    return Redirect(Input.ReturnUrl);
+                }
+                else if (string.IsNullOrEmpty(Input.ReturnUrl))
+                {
+                    return Redirect("~/");
+                }
+                else
+                {
+                    // user might have clicked on a malicious link - should be logged
+                    throw new Exception("invalid return URL");
+                }
+              
             }
             else
             {
-                // user might have clicked on a malicious link - should be logged
-                throw new Exception("invalid return URL");
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("Input.Password", error.Description);
+                }
             }
         }
 

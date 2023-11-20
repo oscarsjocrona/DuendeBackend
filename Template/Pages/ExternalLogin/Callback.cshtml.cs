@@ -75,7 +75,7 @@ public class Callback : PageModel
             user  = new IdentityUser(Guid.NewGuid().ToString());
             await _userManager.CreateAsync(user);
 
-            await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider);
+            await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));
         }
 
         // this allows us to collect any additional claims or properties
@@ -86,7 +86,7 @@ public class Callback : PageModel
         CaptureExternalLoginContext(result, additionalLocalClaims, localSignInProps);
             
         // issue authentication cookie for user
-        var isuser = new IdentityServerUser(user.id)
+        var isuser = new IdentityServerUser(user.Id)
         {
             DisplayName = user.UserName,
             IdentityProvider = provider,
