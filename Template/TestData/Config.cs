@@ -1,5 +1,6 @@
 ﻿using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
+using Shared;
 
 namespace ids.TestData
 {
@@ -64,7 +65,7 @@ namespace ids.TestData
                     //RequireClientSecret = false,
                     //RequirePkce =true,
                     AllowOfflineAccess = true,
-                    AllowedScopes = { "openid", "profile", "messagesapi.read" },
+                    AllowedScopes = { "openid", "profile", "messagesapi.read", CustomJwtClaimTypes.CustomerNumber },
                     RequireConsent = true            
                 },
                 new Client

@@ -4,11 +4,16 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
+using IdentityModel;
+using ids.Entitites;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using Shared;
+using System.Security.Claims;
 
 namespace IdentityServerHost.Pages.Create;
 
@@ -16,21 +21,21 @@ namespace IdentityServerHost.Pages.Create;
 [AllowAnonymous]
 public class Index : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     //private readonly TestUserStore _users;
     private readonly IIdentityServerInteractionService _interaction;
 
     [BindProperty]
     public InputModel Input { get; set; }
-        
+
     public Index(
-        IIdentityServerInteractionService interaction, UserManager<IdentityUser> userManager)
+        IIdentityServerInteractionService interaction, UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
         //// this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
         //_users = users ?? throw new Exception("Please call 'AddTestUsers(TestUsers.Users)' on the IIdentityServerBuilder in Startup or remove the TestUserStore from the AccountController.");
-            
+
         _interaction = interaction;
     }
 
@@ -39,7 +44,7 @@ public class Index : PageModel
         Input = new InputModel { ReturnUrl = System.Web.HttpUtility.UrlDecode(returnUrl) };
         return Page();
     }
-        
+
     public async Task<IActionResult> OnPost()
     {
         // check if we are in the context of an authorization request
@@ -79,9 +84,27 @@ public class Index : PageModel
 
         if (ModelState.IsValid)
         {
-            var iduser = new IdentityUser() { UserName = Input.Username, NormalizedUserName = Input.Name, Email = Input.Email };
+            var iduser = new ApplicationUser() { UserName = Input.Username, NormalizedUserName = Input.Name, Email = Input.Email };
             var result = await _userManager.CreateAsync(iduser, Input.Password);
-            if (result.Succeeded) {
+
+            List<Claim> claims = new List<Claim>();
+            await _userManager.Users
+                .ForEachAsync(
+                    async (u) => claims.AddRange(await _userManager.GetClaimsAsync(u)));
+            var max = claims.Where(c => c.Type == CustomJwtClaimTypes.CustomerNumber).Max(cl => cl.Value);
+            int res = max == null ? 0 : Int32.Parse(max);
+
+
+            var addClaimsResult = await _userManager.AddClaimsAsync(iduser, new Claim[]
+            {
+                new Claim(JwtClaimTypes.Name, Input.Name),
+                new Claim(JwtClaimTypes.GivenName, Input.Name),
+                new Claim(JwtClaimTypes.Email, Input.Email),
+                new Claim(CustomJwtClaimTypes.CustomerNumber, res++.ToString()),
+                new Claim(JwtClaimTypes.Role, "Standard")
+            });
+            if (result.Succeeded)
+            {
                 // issue authentication cookie with subject ID and username
                 var isuser = new IdentityServerUser(iduser.Id)
                 {
@@ -104,11 +127,11 @@ public class Index : PageModel
                 }
 
                 // request for a local page
-                if (Url.IsLocalUrl(Input.ReturnUrl))
-                {
-                    return Redirect(Input.ReturnUrl);
-                }
-                else if (string.IsNullOrEmpty(Input.ReturnUrl))
+                //if (Url.IsLocalUrl(Input.ReturnUrl))
+                //{
+                return Redirect(Input.ReturnUrl);
+                //}
+                if (string.IsNullOrEmpty(Input.ReturnUrl))
                 {
                     return Redirect("~/");
                 }
@@ -117,7 +140,7 @@ public class Index : PageModel
                     // user might have clicked on a malicious link - should be logged
                     throw new Exception("invalid return URL");
                 }
-              
+
             }
             else
             {

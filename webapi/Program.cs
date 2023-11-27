@@ -1,4 +1,6 @@
+using IdentityModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Shared;
 using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +40,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Audience = "messagesapi";
         options.TokenValidationParameters.ValidTypes = new[] { "at+jwt" }; //the name of the jwt-token
     });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CustomerPolicy", policy => {
+            policy.RequireClaim(JwtClaimTypes.Role, "Standard");
+            policy.RequireAssertion(context => context.User.HasClaim(c => c.Type == CustomJwtClaimTypes.CustomerNumber));
+    });
+});
 
 var app = builder.Build();
 
