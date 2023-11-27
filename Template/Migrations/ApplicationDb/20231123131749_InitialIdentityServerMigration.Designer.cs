@@ -11,7 +11,7 @@ using ids.Database;
 namespace ids.Migrations.ApplicationDb
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231116110054_InitialIdentityServerMigration")]
+    [Migration("20231123131749_InitialIdentityServerMigration")]
     partial class InitialIdentityServerMigration
     {
         /// <inheritdoc />

@@ -4,6 +4,7 @@ using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using IdentityModel;
+using ids.Entitites;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -16,7 +17,7 @@ namespace IdentityServerHost.Pages.ExternalLogin;
 [SecurityHeaders]
 public class Callback : PageModel
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interaction;
     private readonly ILogger<Callback> _logger;
     private readonly IEventService _events;
@@ -25,7 +26,7 @@ public class Callback : PageModel
         IIdentityServerInteractionService interaction,
         IEventService events,
         ILogger<Callback> logger,
-        UserManager<IdentityUser> userManager)
+        UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
         _interaction = interaction;
@@ -62,7 +63,7 @@ public class Callback : PageModel
         var providerUserId = userIdClaim.Value;
 
         // find external user
-        var user = await _userManager.FindByLoginAsync(provider, providerUserId) as IdentityUser;
+        var user = await _userManager.FindByLoginAsync(provider, providerUserId) as ApplicationUser;
         if (user == null)
         {
             // this might be where you might initiate a custom workflow for user registration
@@ -72,7 +73,7 @@ public class Callback : PageModel
             // remove the user id claim so we don't include it as an extra claim if/when we provision the user
             var claims = externalUser.Claims.ToList();
             claims.Remove(userIdClaim);
-            user  = new IdentityUser(Guid.NewGuid().ToString());
+            user  = new ApplicationUser(Guid.NewGuid().ToString());
             await _userManager.CreateAsync(user);
 
             await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerUserId, provider));

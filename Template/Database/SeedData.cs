@@ -14,6 +14,7 @@
     using System.Security.Claims;
     using System.Text.Json;
     using Microsoft.AspNetCore.Identity;
+    using ids.Entitites;
 
     public class SeedData
     {
@@ -32,11 +33,11 @@
 
         private static void EnsureUsers(IServiceScope scope)
         {
-            var usrMgr = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var usrMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var alice = usrMgr.FindByNameAsync("alice").Result;
             if (alice == null)
             {
-                alice = new IdentityUser
+                alice = new ApplicationUser
                 {
                     UserName = "alice",
                     Email = "aliceSmith@hotmail.com",
@@ -63,7 +64,7 @@
             var bob = usrMgr.FindByNameAsync("bob").Result;
             if (bob == null)
             {
-                bob = new IdentityUser
+                bob = new ApplicationUser
                 {
                     UserName = "bob",
                     Email = "bobSmith@hotmail.com",

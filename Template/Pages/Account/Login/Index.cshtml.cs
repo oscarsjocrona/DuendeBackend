@@ -4,6 +4,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
+using ids.Entitites;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -16,7 +17,7 @@ namespace IdentityServerHost.Pages.Login;
 [AllowAnonymous]
 public class Index : PageModel
 {
-    private readonly SignInManager<IdentityUser> _signInManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IIdentityServerInteractionService _interaction;
     private readonly IEventService _events;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
@@ -32,7 +33,7 @@ public class Index : PageModel
         IAuthenticationSchemeProvider schemeProvider,
         IIdentityProviderStore identityProviderStore,
         IEventService events,
-        SignInManager<IdentityUser> signInManager)
+        SignInManager<ApplicationUser> signInManager)
     {
         _signInManager = signInManager;
         _interaction = interaction;
@@ -89,7 +90,7 @@ public class Index : PageModel
         if (ModelState.IsValid)
         {
             // validate username/password against in-memory store
-            if (await _signInManager.UserManager.FindByNameAsync(Input.Username) is IdentityUser user && 
+            if (await _signInManager.UserManager.FindByNameAsync(Input.Username) is ApplicationUser user && 
                 await _signInManager.CheckPasswordSignInAsync(user, Input.Password, false) == Microsoft.AspNetCore.Identity.SignInResult.Success)
             {
                 

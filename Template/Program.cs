@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using ids.Data;
 using ids.Database;
 using Microsoft.AspNetCore.Identity;
+using ids.Entitites;
 
 Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
@@ -36,7 +37,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(connectionString, sqliteOptions => sqliteOptions.MigrationsAssembly(migrationsAssembly));
 });
 
-builder.Services.AddIdentity<IdentityUser,  IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser,  IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddSingleton<ICorsPolicyService>((container) => {
@@ -57,7 +58,7 @@ builder.Services.AddIdentityServer(setupAction: options =>
     options.EmitStaticAudienceClaim = true;
 }).AddConfigurationStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
     .AddOperationalStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
-    .AddAspNetIdentity<IdentityUser>();
+    .AddAspNetIdentity<ApplicationUser>();
 
 //.AddInMemoryClients(Config.Clients)
 //.AddInMemoryApiResources(Config.ApiResources)
