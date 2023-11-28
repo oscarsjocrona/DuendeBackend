@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using ids.Data;
 using ids.Database;
 using Microsoft.AspNetCore.Identity;
+using ids.Services;
 
 Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
@@ -30,6 +31,7 @@ var connectionString = configuration.GetConnectionString(name: "DefaultConnectio
 var migrationsAssembly = typeof(Config).Assembly.GetName().Name;
 
 builder.Logging.AddSerilog();
+
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -57,7 +59,8 @@ builder.Services.AddIdentityServer(setupAction: options =>
     options.EmitStaticAudienceClaim = true;
 }).AddConfigurationStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
     .AddOperationalStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString, opt => opt.MigrationsAssembly(migrationsAssembly)))
-    .AddAspNetIdentity<IdentityUser>();
+    .AddAspNetIdentity<IdentityUser>()
+    .AddProfileService<ProfileService>();
 
 //.AddInMemoryClients(Config.Clients)
 //.AddInMemoryApiResources(Config.ApiResources)

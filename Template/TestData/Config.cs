@@ -1,6 +1,6 @@
 ﻿using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
-using Shared;
+using ids.Entities;
 
 namespace ids.TestData
 {
@@ -16,8 +16,11 @@ namespace ids.TestData
             {
                 Name = "role",
                 UserClaims= new List<string> {"role"}
-            }
-            };
+            },
+            new IdentityResource{
+                Name="customerNumber",
+                UserClaims=new List<string> {"customerNumber"}
+            } };
 
         public static IEnumerable<ApiScope> ApiScopes =>
             new ApiScope[]
@@ -32,7 +35,7 @@ namespace ids.TestData
             {
                 Scopes = new List<string>{"messagesapi.read", "messagesapi.write"},
                 ApiSecrets = new List<Secret>{new Secret("ScopeSecret".Sha256())},
-                UserClaims= new List<string> {"role"}
+                UserClaims= new List<string> {"role", "customerNumber"}
             }
         };
 

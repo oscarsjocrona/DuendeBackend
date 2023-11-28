@@ -5,14 +5,13 @@ using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
 using IdentityModel;
-using ids.Entitites;
+using ids.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using Shared;
 using System.Security.Claims;
 
 namespace IdentityServerHost.Pages.Create;
@@ -21,7 +20,7 @@ namespace IdentityServerHost.Pages.Create;
 [AllowAnonymous]
 public class Index : PageModel
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<IdentityUser> _userManager;
 
     //private readonly TestUserStore _users;
     private readonly IIdentityServerInteractionService _interaction;
@@ -30,7 +29,7 @@ public class Index : PageModel
     public InputModel Input { get; set; }
 
     public Index(
-        IIdentityServerInteractionService interaction, UserManager<ApplicationUser> userManager)
+        IIdentityServerInteractionService interaction, UserManager<IdentityUser> userManager)
     {
         _userManager = userManager;
         //// this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
@@ -84,7 +83,7 @@ public class Index : PageModel
 
         if (ModelState.IsValid)
         {
-            var iduser = new ApplicationUser() { UserName = Input.Username, NormalizedUserName = Input.Name, Email = Input.Email };
+            var iduser = new IdentityUser() { UserName = Input.Username, NormalizedUserName = Input.Name, Email = Input.Email };
             var result = await _userManager.CreateAsync(iduser, Input.Password);
 
             List<Claim> claims = new List<Claim>();
